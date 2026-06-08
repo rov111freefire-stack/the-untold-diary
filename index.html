@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เมื่อวันธรรมดาเปลี่ยนไป</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;700&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%; overflow: hidden;
+            font-family: 'Sarabun', sans-serif;
+            background: radial-gradient(ellipse at 40% 30%, #4a3520 0%, #1e0e04 100%);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            min-height: 100vh;
+        }
+
+        /* ── COVER SCREEN ── */
+        #cover-screen {
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-align: center;
+            width: min(90vw, 440px);
+            height: min(88vh, 680px);
+            background:
+                radial-gradient(ellipse at 50% 15%, rgba(255,240,180,0.22) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 80%, rgba(100,50,0,0.25) 0%, transparent 50%),
+                linear-gradient(162deg, #c9aa72 0%, #b89048 35%, #a07830 70%, #8a6420 100%);
+            border-radius: 3px 14px 14px 3px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.7), -8px 0 24px rgba(0,0,0,0.5),
+                        inset 1px 0 0 rgba(255,220,130,0.2);
+            padding: 52px 44px; position: relative; overflow: hidden;
+        }
+        #cover-screen::before {
+            content: ''; position: absolute; inset: 14px;
+            border: 1px solid rgba(255,210,100,0.3);
+            border-radius: 2px 10px 10px 2px; pointer-events: none;
+        }
+        #cover-screen::after {
+            content: ''; position: absolute; inset: 20px;
+            border: 1px solid rgba(255,210,100,0.15);
+            border-radius: 1px 8px 8px 1px; pointer-events: none;
+        }
+        .cover-ornament { font-size: 1.5em; color: rgba(255,210,120,0.55); margin-bottom: 16px; letter-spacing: 0.5em; }
+        #cover-screen h1 {
+            font-family: 'Mali', cursive;
+            font-size: clamp(1.8em, 5vw, 3em); color: #2a1606;
+            margin-bottom: 16px; text-shadow: 1px 2px 6px rgba(0,0,0,0.2);
+            line-height: 1.25; letter-spacing: 0.02em;
+        }
+        .cover-divider { width: 60px; height: 1px; background: linear-gradient(to right, transparent, rgba(100,60,10,0.5), transparent); margin: 14px auto; }
+        #cover-screen .subtitle { font-size: clamp(0.85em,2.2vw,1em); color: #4a2c0c; margin-bottom: 10px; line-height: 1.9; font-weight: 300; }
+        #cover-screen .author  { font-size: 0.82em; color: rgba(74,44,12,0.7); margin-bottom: 44px; letter-spacing: 0.1em; }
+        .open-btn {
+            padding: 12px 40px; font-size: 1em;
+            background: rgba(30,14,2,0.75); color: #e8cc88;
+            border: 1px solid rgba(180,130,50,0.55); border-radius: 28px;
+            cursor: pointer; font-family: 'Sarabun', sans-serif;
+            font-weight: 600; letter-spacing: 0.08em;
+            transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .open-btn:hover { background: rgba(70,36,6,0.85); border-color: rgba(200,155,60,0.75); transform: translateY(-2px); }
+
+        /* ── BOOK CONTAINER ── */
+        #book-container { display: none; flex-direction: column; align-items: center; gap: 16px; width: 100%; }
+        #book-container.show { display: flex; }
+
+        /* ── BOOK ── */
+        #book-row { display: flex; align-items: center; gap: 12px; }
+
+        .side-arrow {
+            background: rgba(30,14,2,0.55);
+            border: 1px solid rgba(180,130,45,0.45);
+            color: rgba(220,180,80,0.95);
+            border-radius: 50%; width: 46px; height: 46px; flex-shrink: 0;
+            font-size: 1.2em; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+            user-select: none; backdrop-filter: blur(6px);
+        }
+        .side-arrow:hover { background: rgba(80,40,6,0.85); border-color: rgba(200,155,60,0.7); transform: scale(1.1); }
+        .side-arrow:active { transform: scale(0.95); }
+
+        /* ── BOOK SPREAD ── */
+        #book-spread {
+            position: relative;
+            width: min(92vw, 1000px);
+            height: min(80vh, 640px);
+            perspective: 2000px;
+        }
+
+        /* Spine shadow */
+        #book-spread::after {
+            content: '';
+            position: absolute; top: 4%; bottom: 4%;
+            left: 50%; transform: translateX(-50%);
+            width: 3px;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.35) 20%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.35) 80%, transparent);
+            z-index: 10; pointer-events: none;
+        }
+
+        /* Each spread: two pages side by side */
+        .spread {
+            position: absolute; inset: 0;
+            display: flex;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.05s;
+        }
+        .spread.active { opacity: 1; pointer-events: auto; }
+
+        /* Page halves */
+        .page-left, .page-right {
+            width: 50%; height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        .page-left  { border-radius: 6px 0 0 6px; box-shadow: -4px 0 20px rgba(0,0,0,0.35); }
+        .page-right { border-radius: 0 6px 6px 0; box-shadow:  4px 0 20px rgba(0,0,0,0.35); }
+
+        /* ── FLIP ANIMATION ── */
+        #flip-container {
+            position: absolute; inset: 0;
+            pointer-events: none; z-index: 20;
+            perspective: 1800px;
+        }
+        .flip-leaf {
+            position: absolute; top: 0; bottom: 0;
+            width: 50%; transform-origin: left center;
+            transform-style: preserve-3d;
+            transition: transform 0.65s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+            backface-visibility: hidden;
+        }
+        .flip-leaf.from-right { transform-origin: right center; right: 0; left: auto; }
+        .flip-leaf-front, .flip-leaf-back {
+            position: absolute; inset: 0;
+            backface-visibility: hidden; overflow: hidden;
+        }
+        .flip-leaf-back { transform: rotateY(180deg); }
+
+        /* ── PAPER TEXTURE ── */
+        .paper {
+            width: 100%; height: 100%;
+            background:
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E"),
+                radial-gradient(ellipse at 18% 12%, rgba(255,252,220,0.55) 0%, transparent 42%),
+                radial-gradient(ellipse at 82% 88%, rgba(130,78,8,0.12) 0%, transparent 38%),
+                linear-gradient(172deg, #f5ebb8 0%, #eedf90 42%, #e8d472 100%);
+            position: relative;
+        }
+        .paper::before {
+            content: ''; position: absolute; inset: 0;
+            background:
+                linear-gradient(to right, rgba(100,60,5,0.09) 0%, transparent 8%),
+                linear-gradient(to left, rgba(100,60,5,0.06) 0%, transparent 6%),
+                linear-gradient(to bottom,rgba(100,60,5,0.07) 0%, transparent 6%),
+                linear-gradient(to top, rgba(100,60,5,0.07) 0%, transparent 6%);
+            pointer-events: none; z-index: 1;
+        }
+
+        /* ── COVER PAGE (inside) ── */
+        .page-cover-inner {
+            width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse at 50% 20%, rgba(255,235,160,0.3) 0%, transparent 55%),
+                linear-gradient(162deg, #cdb070 0%, #b89040 38%, #a07830 100%);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-align: center; padding: 50px 36px; position: relative;
+        }
+        .page-cover-inner::before { content: ''; position: absolute; inset: 14px; border: 1px solid rgba(255,210,100,0.3); pointer-events: none; }
+        .page-cover-inner h1 { font-family: 'Mali', cursive; font-size: clamp(1.5em,3vw,2.4em); color: #271505; margin-bottom: 14px; text-shadow: 1px 2px 5px rgba(0,0,0,0.18); line-height: 1.25; }
+        .page-cover-inner .sub { font-size: clamp(0.75em,1.6vw,0.9em); color: #4a2c0c; line-height: 1.9; font-weight: 300; }
+        .page-cover-inner .aut { font-size: 0.75em; color: rgba(74,44,12,0.65); margin-top: 10px; letter-spacing: 0.08em; }
+
+        /* ── BACK COVER ── */
+        .page-back { width: 100%; height: 100%; background: linear-gradient(155deg, #b8934a 0%, #966e28 100%); }
+
+        /* ── BLANK (empty left side for first spread) ── */
+        .page-blank { width: 100%; height: 100%; background: linear-gradient(155deg, #b8934a 0%, #966e28 100%); }
+
+        /* ── TABLE OF CONTENTS ── */
+        .toc-inner { width: 100%; height: 100%; padding: 44px 36px 44px 30px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 2; }
+        .toc-title { font-family: 'Mali', cursive; font-size: clamp(1.2em,2.5vw,1.7em); color: #301808; margin-bottom: 28px; letter-spacing: 0.04em; }
+        .toc-item { display: flex; align-items: baseline; margin-bottom: 14px; gap: 6px; }
+        .toc-chapter { font-size: clamp(0.78em,1.6vw,0.92em); color: #9a7030; min-width: 70px; font-weight: 600; letter-spacing: 0.06em; }
+        .toc-name { font-size: clamp(0.82em,1.7vw,0.96em); color: #3e2808; font-weight: 300; flex: 1; }
+        .toc-dots { flex: 1; border-bottom: 1px dotted rgba(130,90,20,0.3); margin: 0 6px 3px; }
+        .toc-page-n { font-size: 0.78em; color: #9a7030; min-width: 20px; text-align: right; }
+
+        /* ── IMAGE PAGE ── */
+        .page-img-inner { width: 100%; height: 100%; padding: 30px 20px 30px 32px; display: flex; align-items: center; position: relative; z-index: 2; }
+        .img-art { width: 100%; height: 100%; border-radius: 6px; border: 1px solid rgba(140,100,20,0.3); box-shadow: inset 0 2px 8px rgba(0,0,0,0.08), 2px 3px 10px rgba(0,0,0,0.1); overflow: hidden; position: relative; }
+        .img-art .sky { position: absolute; top: 0; left: 0; right: 0; height: 55%; background: linear-gradient(180deg,#d4b45a 0%,#e8c870 50%,#f0d888 100%); }
+        .img-art .sun { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); width: 14%; padding-top: 14%; background: radial-gradient(circle,rgba(255,240,150,0.9) 0%,rgba(220,170,50,0.4) 60%,transparent 80%); border-radius: 50%; }
+        .img-art .ground { position: absolute; bottom: 0; left: 0; right: 0; height: 48%; background: linear-gradient(180deg,#c8a840 0%,#b89030 60%,#a07820 100%); }
+        .img-art .hill { position: absolute; background: rgba(120,80,10,0.35); border-radius: 50% 50% 0 0; }
+        .img-art .hill1 { width: 70%; height: 30%; bottom: 38%; left: -10%; }
+        .img-art .hill2 { width: 55%; height: 22%; bottom: 40%; right: -5%; }
+        .img-art .tree { position: absolute; bottom: 38%; display: flex; flex-direction: column; align-items: center; }
+        .img-art .trunk { width: 3px; background: rgba(80,50,10,0.5); }
+        .img-art .crown { border-left: solid transparent; border-right: solid transparent; border-bottom: solid rgba(80,50,10,0.4); }
+        .img-art .road { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 10%; height: 40%; background: linear-gradient(180deg,rgba(160,120,20,0.25) 0%,rgba(160,120,20,0.5) 100%); clip-path: polygon(20% 0%,80% 0%,100% 100%,0% 100%); }
+        .img-art .caption { position: absolute; bottom: 10px; right: 12px; font-size: 0.62em; color: rgba(80,50,5,0.45); letter-spacing: 0.08em; font-family: 'Sarabun', sans-serif; }
+
+        /* ── TEXT PAGE ── */
+        .page-text-inner {
+            width: 100%; height: 100%;
+            padding: 28px 28px 36px 24px;
+            display: flex; flex-direction: column;
+            justify-content: flex-start;
+            overflow: hidden; position: relative; z-index: 2;
+            /* ruled lines */
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent,
+                transparent calc(1.75em * 1 - 1px),
+                rgba(160,110,20,0.1) calc(1.75em * 1),
+                rgba(160,110,20,0.1) calc(1.75em * 1 + 1px)
+            );
+            background-size: 100% 1.75em;
+            background-position: 0 3.8em;
+        }
+        .chapter-label {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.6em; color: rgba(130,90,20,0.6);
+            letter-spacing: 0.22em; margin-bottom: 4px;
+            font-weight: 600; flex-shrink: 0;
+        }
+        h2 {
+            font-family: 'Mali', cursive;
+            font-size: clamp(1em,2vw,1.4em);
+            color: #2e1606; margin-bottom: 12px;
+            line-height: 1.25; flex-shrink: 0;
+            border-bottom: 1px solid rgba(160,110,20,0.2);
+            padding-bottom: 8px;
+        }
+        p {
+            font-family: 'Mali', cursive;
+            font-size: clamp(0.78em,1.4vw,0.9em);
+            line-height: 1.75; color: #3a2406;
+            margin-bottom: 6px; letter-spacing: 0.01em;
+        }
+        p em {
+            font-style: italic; color: #6a3c10;
+        }
+        p:last-child { margin-bottom: 0; }
+        .pg-num { position: absolute; bottom: 14px; font-size: 0.66em; color: rgba(100,65,15,0.45); letter-spacing: 0.1em; z-index: 3; }
+        .pg-num.left { left: 22px; }
+        .pg-num.right { right: 22px; }
+
+        /* ── PAGE COUNTER ── */
+        #page-counter { color: rgba(220,185,110,0.75); font-size: 0.82em; font-family: 'Sarabun', sans-serif; letter-spacing: 0.08em; }
+
+        @media (max-width: 600px) {
+            #book-spread { height: min(72vh, 520px); }
+            .side-arrow { width: 36px; height: 36px; font-size: 1em; }
+            .page-text-inner { padding: 24px 18px 24px 14px; }
+            .page-img-inner  { padding: 16px 12px 16px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ปกก่อนเปิด -->
+<div id="cover-screen">
+    <div class="cover-ornament">— ✦ —</div>
+    <h1>เมื่อวันธรรมดา<br>เปลี่ยนไป</h1>
+    <div class="cover-divider"></div>
+    <p class="subtitle">เรื่องเล่าจากชีวิตที่เรียบง่าย<br>ที่เปลี่ยนไปเพราะการได้พบใครบางคน</p>
+    <p class="author">— ไดอารี่ส่วนตัว —</p>
+    <button class="open-btn" onclick="startReading()">เปิดอ่าน</button>
+</div>
+
+<!-- หนังสือ -->
+<div id="book-container">
+    <div id="book-row">
+        <button class="side-arrow" onclick="prevPage()">❮</button>
+
+        <div id="book-spread">
+
+            <!-- SPREAD 0: ปกใน (right only, left = back cover color) -->
+            <div class="spread" data-spread="0">
+                <div class="page-left"><div class="page-blank"></div></div>
+                <div class="page-right">
+                    <div class="page-cover-inner">
+                        <div class="cover-ornament" style="font-size:1.1em;margin-bottom:12px;">— ✦ —</div>
+                        <h1>เมื่อวันธรรมดา<br>เปลี่ยนไป</h1>
+                        <div class="cover-divider" style="margin:12px auto;"></div>
+                        <p class="sub">เรื่องเล่าจากชีวิตที่เรียบง่าย<br>ที่เปลี่ยนไปเพราะการได้พบใครบางคน</p>
+                        <p class="aut">— ไดอารี่ส่วนตัว —</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 1: สารบัญ (L) + คำนำ (R) -->
+            <div class="spread" data-spread="1">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="toc-inner">
+                            <div class="toc-title">สารบัญ</div>
+                            <div class="toc-item"><span class="toc-chapter">คำนำ</span><span class="toc-dots"></span><span class="toc-page-n">iii</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 1</span><span class="toc-name">การเจอกันในวันที่จากลา</span><span class="toc-dots"></span><span class="toc-page-n">3</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 2</span><span class="toc-name">การพบกันครั้งแรก</span><span class="toc-dots"></span><span class="toc-page-n">5</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 3</span><span class="toc-name">การวนกลับมาอีกครั้ง</span><span class="toc-dots"></span><span class="toc-page-n">7</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 4</span><span class="toc-name">แชทที่รอคอย</span><span class="toc-dots"></span><span class="toc-page-n">9</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 5</span><span class="toc-name">—</span><span class="toc-dots"></span><span class="toc-page-n">11</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 6</span><span class="toc-name">—</span><span class="toc-dots"></span><span class="toc-page-n">13</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 7</span><span class="toc-name">ขอบคุณเพื่อนตัวดี</span><span class="toc-dots"></span><span class="toc-page-n">15</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 8</span><span class="toc-name">โมจิช็อกโกแลตดูไบ กับโน้ตเพลงที่หายไป</span><span class="toc-dots"></span><span class="toc-page-n">17</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทที่ 9</span><span class="toc-name">เมื่อตัวร้ายในเรื่องเล่า เดินกลับเข้ามาในชีวิตจริง</span><span class="toc-dots"></span><span class="toc-page-n">19</span></div>
+                            <div class="toc-item"><span class="toc-chapter">บทสรุป</span><span class="toc-dots"></span><span class="toc-page-n">17</span></div>
+                        </div>
+                        <span class="pg-num left">i</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">คำนำ</span>
+                            <h2>บทนำ</h2>
+                            <p>บางครั้งชีวิตก็ไม่ได้เปลี่ยนไปเพราะเหตุการณ์ใหญ่โต</p>
+                            <p>แต่อาจเปลี่ยนไปเพียงเพราะวันหนึ่ง</p>
+                            <p>เราได้พบใครบางคนที่ทำให้วันธรรมดาไม่เหมือนเดิมอีกต่อไป</p>
+                        </div>
+                        <span class="pg-num right">iii</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 2: รูป บท1 (L) + บท1 ข้อความ (R) -->
+            <div class="spread" data-spread="2">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky"></div><div class="sun"></div>
+                                <div class="hill hill1"></div><div class="hill hill2"></div>
+                                <div class="ground"></div><div class="road"></div>
+                                <div class="tree" style="left:22%;bottom:39%">
+                                    <div class="crown" style="border-left-width:10px;border-right-width:10px;border-bottom-width:18px;"></div>
+                                    <div class="crown" style="border-left-width:8px;border-right-width:8px;border-bottom-width:14px;margin-top:-6px;"></div>
+                                    <div class="trunk" style="height:22px;"></div>
+                                </div>
+                                <div class="tree" style="right:28%;bottom:39%">
+                                    <div class="crown" style="border-left-width:8px;border-right-width:8px;border-bottom-width:15px;"></div>
+                                    <div class="crown" style="border-left-width:6px;border-right-width:6px;border-bottom-width:12px;margin-top:-5px;"></div>
+                                    <div class="trunk" style="height:18px;"></div>
+                                </div>
+                                <div class="caption">บทที่ ๑</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">2</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่หนึ่ง</span>
+                            <h2>การเจอกันใน<br>วันที่จากลา</h2>
+                            <p>วันนี้เป็นวันสุดท้ายก่อนที่พวกเราจะต้องแยกย้ายกันไปตามทางของตัวเอง บรรยากาศมันก็แปลกดี ทั้งสนุก ทั้งใจหาย เหมือนรู้ว่าหลังจากวันนี้ทุกอย่างอาจไม่เหมือนเดิมอีกแล้ว</p>
+                            <p>ก่อนจะแยกกัน พวกเราได้เล่นเกม ROV ด้วยกันเหมือนเป็นการส่งท้าย แค่อยากใช้เวลาสุดท้ายให้สนุกที่สุด แต่แล้วเราก็ได้เจอทีมหนึ่งที่ไม่ธรรมดาเลย</p>
+                            <p>ในทีมนั้นมีผู้เล่นคนหนึ่งใช้ Butterfly เม็ดส้ม และเป็นผู้หญิงอีกต่างหาก จากที่เล่นกันชิล ๆ มันกลับค่อย ๆ จริงจังขึ้นแบบไม่รู้ตัว สุดท้ายเกมนั้นพวกเราก็แพ้</p>
+                            <p>หลังจบเกม ผมเผลอกดเข้าไปส่องโปรไฟล์ของผู้เล่นคนนั้น เขาไม่ได้เล่นโดดเด่นที่สุด แต่ไม่รู้ทำไมผมถึงสนใจ อาจเพราะเขาดูน่ารักในแบบของเขาเอง ผมเลยแอดเพื่อนไป และบังเอิญว่าเขาทิ้ง IG ไว้ด้วย ผมเลยแอดไปอีกช่องทางหนึ่ง</p>
+                            <p>มันอาจเป็นแค่เรื่องเล็ก ๆ ในเกมวันนั้น แต่สำหรับผม มันกลายเป็นจุดเริ่มต้นเล็ก ๆ ของอะไรบางอย่าง</p>
+                        </div>
+                        <span class="pg-num right">3</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 3: รูป บท2 (L) + บท2 ข้อความ (R) -->
+            <div class="spread" data-spread="3">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#c8a850 0%,#dfc070 50%,#ecd888 100%);"></div>
+                                <div class="sun" style="top:22%;width:12%;padding-top:12%;"></div>
+                                <div class="hill hill1"></div><div class="hill hill2" style="height:26%;"></div>
+                                <div class="ground"></div>
+                                <div style="position:absolute;bottom:39%;left:38%;width:5%;height:22%;background:rgba(60,35,5,0.45);border-radius:50% 50% 0 0 / 40% 40% 0 0;"></div>
+                                <div style="position:absolute;bottom:39%;left:54%;width:4%;height:19%;background:rgba(60,35,5,0.35);border-radius:50% 50% 0 0 / 40% 40% 0 0;"></div>
+                                <div class="caption">บทที่ ๒</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">4</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่สอง</span>
+                            <h2>การพบกันครั้งแรก</h2>
+                            <p>หลังจากนั้น เรื่องราวก็ผ่านไปนานแสนนาน ประมาณหนึ่งปี เขากลับมาโสดอีกครั้ง และแวะเข้ามาเล่น ROV เป็นบางครั้ง</p>
+                            <p>ส่วนผม ก็ยังคงส่งของขวัญเพิ่มความสัมพันธ์ไปให้เขาอยู่เรื่อย ๆ ในช่วงแรก ผมเป็นฝ่ายส่งอยู่ฝ่ายเดียว</p>
+                            <p>แต่แล้วความพยายามก็ค่อย ๆ เห็นผล เขาเริ่มส่งกลับมาบ้างทีละนิด จนกระทั่งค่าความสัมพันธ์ค่อย ๆ เพิ่มขึ้น จากหลักร้อย… กลายเป็นหลักพัน</p>
+                            <p>แล้ววันหนึ่ง เขาก็ทักแชทมาในเกมว่า <em>"ใครนะ"</em></p>
+                            <p>ผมก็ตอบกลับไปเหมือนที่เคยบอกไว้ในตอนแรก แต่สุดท้ายแล้ว… เราก็ยังไม่มีโอกาสได้เล่นด้วยกันอยู่ดี</p>
+                        </div>
+                        <span class="pg-num right">5</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 4: รูป บท3 (L) + บท3 ข้อความ (R) -->
+            <div class="spread" data-spread="4">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#e0c060 0%,#f0d47a 50%,#f8e89a 100%);"></div>
+                                <div class="sun" style="top:14%;width:16%;padding-top:16%;background:radial-gradient(circle,rgba(255,245,160,0.95) 0%,rgba(230,180,60,0.5) 55%,transparent 75%);"></div>
+                                <div class="ground"></div><div class="hill hill1" style="height:24%;"></div>
+                                <div style="position:absolute;bottom:40%;left:25%;width:4px;height:4px;background:rgba(180,120,20,0.4);border-radius:50%;box-shadow:8px 4px 0 rgba(180,120,20,0.35),18px -2px 0 rgba(180,120,20,0.3),28px 6px 0 rgba(180,120,20,0.4),40px 0 0 rgba(180,120,20,0.3);"></div>
+                                <div class="caption">บทที่ ๓</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">6</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่สาม</span>
+                            <h2>การวนกลับมา<br>อีกครั้ง</h2>
+                            <p>หลังจากนั้น เขาก็ค่อย ๆ หายไปจากความทรงจำของผม นานถึงสองปีเต็ม</p>
+                            <p>จนกระทั่งวันหนึ่ง ผมก็เผลอนึกถึงเขาขึ้นมา และตั้งคำถามกับตัวเองว่า… เขาหายไปไหน</p>
+                            <p>แต่เมื่อเข้าไปดูอีกครั้ง ผมกลับไม่ได้ติดตาม IG ของเขาแล้ว ส่วนสาเหตุนั้น… ไม่มีใครรู้เลย แม้แต่ตัวผมเอง</p>
+                            <p>ผมยังคงแอบเข้าไปดูเขาเป็นระยะ ๆ นานนับปี แต่ไม่ว่าจะเข้าไปดูตอนไหน เขาก็มักจะมีใครคนอยู่ข้าง ๆ เสมอ</p>
+                            <p>จนกระทั่งวันหนึ่ง ความหวังที่เคยหายไป ก็เหมือนจะวนกลับมาอีกครั้ง</p>
+                        </div>
+                        <span class="pg-num right">7</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 5: รูป บท4 (L) + บท4 ข้อความ (R) -->
+            <div class="spread" data-spread="5">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#b89040 0%,#cca850 50%,#dfc070 100%);"></div>
+                                <div class="ground" style="background:linear-gradient(180deg,#a07020 0%,#8a5c10 60%,#744808 100%);"></div>
+                                <div class="hill hill1" style="background:rgba(100,65,5,0.3);height:28%;"></div>
+                                <div style="position:absolute;bottom:46%;left:47%;width:14px;height:12px;background:rgba(160,80,20,0.25);clip-path:polygon(50% 100%,0% 35%,15% 0%,50% 25%,85% 0%,100% 35%);"></div>
+                                <div class="caption">บทที่ ๔</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">8</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่สี่</span>
+                            <h2>แชทที่รอคอย</h2>
+                            <p>แล้ววันหนึ่ง เขาก็กลับมาออนไลน์ในเกมอีกครั้ง หลังจากหายไปนาน ครั้งนี้เขาเล่นบ่อยขึ้น แทบทุกวัน และนั่นทำให้ "ความหวังครั้งที่สอง" ของผมกลับมา</p>
+                            <p>ผมตัดสินใจทักแชทไปว่า <em>"กลับมาเล่นแล้วหรอ"</em></p>
+                            <p>วันแรก… เขาไม่ตอบ วันที่สอง ผมทักไปอีกครั้งว่า <em>"ใช่คนเดิมไหมนิ"</em></p>
+                            <p>จนกระทั่งวันถัดมา เขาก็ตอบกลับมา แน่นอนว่า… เขายังไม่รู้ว่าผมคือใคร ซึ่งมันก็ไม่แปลกอะไรเลย</p>
+                            <p>ผมเลยแกล้งปั่นเขาเล่นอยู่พักหนึ่ง เหมือนอยากยื้อบทสนทนาไว้ให้นานที่สุด และในที่สุด เราก็ได้เล่นด้วยกัน… เป็นครั้งแรก</p>
+                        </div>
+                        <span class="pg-num right">9</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 6: รูป บท5 (L) + บท5 ข้อความ (R) -->
+            <div class="spread" data-spread="6">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#c8b060 0%,#ddc878 50%,#eedda0 100%);"></div>
+                                <div class="sun" style="top:16%;width:15%;padding-top:15%;"></div>
+                                <div class="ground"></div>
+                                <div class="hill hill1" style="height:26%;"></div>
+                                <div class="hill hill2" style="height:20%;"></div>
+                                <div style="position:absolute;bottom:39%;left:44%;width:5%;height:22%;background:rgba(60,35,5,0.42);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div style="position:absolute;bottom:39%;left:52%;width:4%;height:19%;background:rgba(60,35,5,0.35);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div class="caption">บทที่ ๕</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">10</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่ห้า</span>
+                            <h2>—</h2>
+                            <p>…</p>
+                        </div>
+                        <span class="pg-num right">11</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 7: บท6 ว่าง -->
+            <div class="spread" data-spread="7">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#d8bc54 0%,#ecd070 50%,#f8e490 100%);"></div>
+                                <div class="sun" style="top:18%;width:14%;padding-top:14%;"></div>
+                                <div class="ground"></div>
+                                <div class="hill hill1" style="height:22%;"></div>
+                                <div class="hill hill2" style="height:17%;"></div>
+                                <div class="caption">บทที่ ๖</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">12</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่หก</span>
+                            <h2>—</h2>
+                            <p>…</p>
+                        </div>
+                        <span class="pg-num right">13</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 8: รูป บท7 (L) + บท7 ข้อความ (R) -->
+            <div class="spread" data-spread="8">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#d4b84a 0%,#e8cc68 50%,#f4e090 100%);"></div>
+                                <div class="sun" style="top:20%;width:13%;padding-top:13%;"></div>
+                                <div class="ground"></div>
+                                <div class="hill hill1" style="height:24%;"></div>
+                                <div class="hill hill2" style="height:18%;"></div>
+                                <div style="position:absolute;bottom:39%;left:30%;width:4%;height:20%;background:rgba(60,35,5,0.4);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div style="position:absolute;bottom:39%;left:43%;width:5%;height:23%;background:rgba(60,35,5,0.45);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div style="position:absolute;bottom:39%;left:57%;width:4%;height:19%;background:rgba(60,35,5,0.38);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div class="caption">บทที่ ๗</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">14</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่เจ็ด</span>
+                            <h2>ขอบคุณเพื่อนตัวดี</h2>
+                            <p>หลังจากช่วงเวลาดีๆ เหล่านั้น เราก็ยังคงเล่นเกมด้วยกันตามปกติ แต่แล้วมีอยู่คืนหนึ่งตอนประมาณห้าทุ่ม ระหว่างที่กำลังเล่นเกมอยู่ เพื่อนตัวดีของผมก็ส่งรูปปลาแซลมอนดองหน้าตาน่ากินมาให้ดู แผนร้ายทำให้ผมหิวตอนดึกชัดๆ แต่น่าเสียดาย เพราะแซลมอนดองไม่ใช่ของโปรดของผมสักหน่อย</p>
+                            <p>ผมเลยเอาเรื่องนี้ไปบ่นแกมขำกับเธอว่า <em>"ดูดิ… เพื่อนพี่มันส่งแซลมอนดองมาให้ดูเวลานี้ แกล้งกันชัดๆ เลวร้ายมาก"</em></p>
+                            <p>เธอบอกกลับมาทันทีว่า <em>"โห ถ้าเป็นเพื่อนหนูนะ หนูบล็อกไปแล้ว เพราะหนูชอบมาก! ชอบกินทั้งกุ้ง ทั้งแซลมอน ชอบมากๆ เลย… แต่หนูแพ้นะ กินทีไรหายใจไม่ออกตลอด ถ้าสุกคือกินได้ปกติ"</em></p>
+                            <p>แล้วเธอก็ทิ้งท้ายมาขำๆ ว่า <em>"ถ้าพี่ส่งให้หนูดูบ้างนะ หนูบล็อกพี่แน่!"</em></p>
+                            <p>บรรยากาศตอนนั้นสนุกและผ่อนคลายดีมาก ในใจแอบขอบคุณไอ้เพื่อนตัวดีคนนั้นอยู่เหมือนกัน ถึงจะตั้งใจส่งมาแกล้ง แต่รูปแซลมอนดองจานนั้น กลับกลายเป็นตัวเปิดบทสนทนาที่ดีที่สุดในคืนนั้นเลยล่ะ</p>
+                        </div>
+                        <span class="pg-num right">15</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 9: รูป บท8 (L) + บท8 ข้อความ (R) -->
+            <div class="spread" data-spread="9">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#c8b060 0%,#ddc878 50%,#eedda0 100%);"></div>
+                                <div class="sun" style="top:16%;width:15%;padding-top:15%;"></div>
+                                <div class="ground"></div>
+                                <div class="hill hill1" style="height:26%;"></div>
+                                <div class="hill hill2" style="height:20%;"></div>
+                                <div style="position:absolute;bottom:39%;left:44%;width:5%;height:22%;background:rgba(60,35,5,0.42);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div style="position:absolute;bottom:39%;left:52%;width:4%;height:19%;background:rgba(60,35,5,0.35);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div class="caption">บทที่ ๘</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">16</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่แปด</span>
+                            <h2>โมจิช็อกโกแลตดูไบ<br>กับโน้ตเพลงที่หายไป</h2>
+                            <p>การได้เล่นเกมด้วยกันเกือบทุกวัน กลายเป็นช่วงเวลาที่ดีที่สุดไปแล้ว ยิ่งนานวันเข้า เธอก็ยิ่งดูสมบูรณ์แบบในสายตาผม เธอเป็นคนอารมณ์ดี น่ารัก ขี้เล่น แถมยังคุยเก่ง คิดอะไรก็พูดออกมาตรงๆ</p>
+                            <p>ตอนเล่นเกมเธอต้องมีขนมอยู่ข้างตัวตลอด จนได้ยินเสียงเคี้ยวเสียงกินผ่านไมค์อยู่เรื่อยๆ พอลองถามดู เธอเถียงกลับมาขำๆ ว่า <em>"ก็พูดเยอะ มันใช้พลังงานเยอะนี่นา!"</em></p>
+                            <p>ความชอบของเธอผมจำได้ขึ้นใจ — คาราโมโจ้ ก๋วยเตี๋ยวต้มยำร้านแถวบ้านที่ตอนนี้ปิดไปแล้ว ส้มตำของแซ่บๆ แล้วก็โมจิช็อกโกแลตดูไบที่เธอแนะนำ ผมไม่ใช่คนชอบของหวาน แต่พออันนี้… มันกลายเป็นรสชาติที่ผมตามหาเลยล่ะ</p>
+                            <p>อาทิตย์แรกผมแอบถอดใจ เพราะเธอยังลงเพลงในโน้ตถึงคนเก่าอยู่ แต่พออาทิตย์ที่สอง โน้ตพวกนั้นก็เริ่มหายไปจนไม่ได้ลงอีก มันเลยทำให้ผมเริ่มมีความหวังว่า บางทีตัวเองอาจสู้คนเก่าของเธอได้แล้วก็ได้…</p>
+                            <p>แต่แล้ว ตัวปัญหาใหญ่เรื่องเดิม ก็ดันวนกลับมาอีกครั้งจนได้</p>
+                        </div>
+                        <span class="pg-num right">17</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 10: รูป บท9 (L) + บท9 ข้อความ (R) -->
+            <div class="spread" data-spread="10">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#b89840 0%,#ccaa50 50%,#e0c070 100%);"></div>
+                                <div class="ground" style="background:linear-gradient(180deg,#a07828 0%,#8a6018 60%,#744c08 100%);"></div>
+                                <div class="hill hill1" style="height:26%;background:rgba(100,68,8,0.3);"></div>
+                                <div class="hill hill2" style="height:20%;background:rgba(100,68,8,0.22);"></div>
+                                <div style="position:absolute;bottom:39%;left:36%;width:5%;height:24%;background:rgba(60,35,5,0.45);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div style="position:absolute;bottom:39%;left:55%;width:4%;height:20%;background:rgba(60,35,5,0.35);border-radius:50% 50% 0 0/40% 40% 0 0;"></div>
+                                <div class="caption">บทที่ ๙</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">18</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทที่เก้า</span>
+                            <h2>เมื่อตัวร้ายในเรื่องเล่า<br>เดินกลับเข้ามา<br>ในชีวิตจริง</h2>
+                            <p>ปกติแล้วเธอมักจะเล่าเรื่องราวให้ฟังแทบทุกวัน ในนั้นมีเรื่องแฟนเก่าของเธออยู่บ้าง วีรกรรมของหมอนั่น… พูดตรงๆ คือแย่มาก แย่จนผมแอบคิดในใจว่า ถ้าเธอจะกลับไปคบกับคนแบบนั้น ผมคงหมดคำจะพูดจริงๆ</p>
+                            <p>แต่แล้วมันก็มีวันหนึ่ง วันที่ดูเหมือนจะเป็นวันธรรมดาทั่วไป ผมกำลังเล่นเกมอย่างสนุกสนาน จู่ๆ เธอก็พูดขึ้นมาว่า <em>"พี่… แฟนเก่าหนูกลับมาง้อแล้วนะ"</em></p>
+                            <p>จังหวะนั้นเหมือนโลกหยุดหมุน ผมเล่นเกมไม่ออกทันที ความสนุกทั้งหมดละลายหายไปในพริบตา ผมพยายามประคองเสียงถามกลับไปว่าเธอตอบยังไง เธอเล่าว่าถามมันกลับไปว่า <em>"ทำไมทำตามสัญญาที่ให้ไว้ไม่ได้"</em></p>
+                            <p>ผมถามต่อว่ามันทักมาได้ยังไง ไม่บล็อกเหรอ… คำตอบที่ได้ยินคือ <em>"หนูไม่บล็อก"</em></p>
+                            <p>วินาทีนั้น ความรู้สึกที่จะเล่นเกมมันไม่เหลืออยู่อีกแล้ว ใจมันลอยไปไหนต่อไหน ได้แต่ฝืนเล่นให้จบไปทีละเกมเพื่อไม่ให้ดูผิดปกติ ทั้งที่ใจอยากจะหนีไปนอนเต็มที แต่ก็ต้องยอมต่ออีกสักเกมเพื่อรักษาบรรยากาศไว้…</p>
+                            <p>และหลังจากที่ผู้ชายคนนั้นก้าวเข้ามา ทุกอย่างก็เริ่มเปลี่ยนไป</p>
+                        </div>
+                        <span class="pg-num right">19</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 11: รูป บทสรุป (L) + บทสรุป ข้อความ (R) -->
+            <div class="spread" data-spread="11">
+                <div class="page-left">
+                    <div class="paper">
+                        <div class="page-img-inner">
+                            <div class="img-art">
+                                <div class="sky" style="background:linear-gradient(180deg,#d4a840 0%,#e8c060 40%,#f4d880 100%);"></div>
+                                <div class="sun" style="top:10%;width:20%;padding-top:20%;background:radial-gradient(circle,rgba(255,248,180,0.98) 0%,rgba(240,190,70,0.6) 50%,transparent 72%);"></div>
+                                <div class="ground"></div>
+                                <div class="hill hill1" style="height:32%;background:rgba(110,72,8,0.28);"></div>
+                                <div class="hill hill2" style="height:26%;background:rgba(110,72,8,0.22);"></div>
+                                <div class="road"></div>
+                                <div style="position:absolute;bottom:39%;left:43%;width:5%;height:23%;background:rgba(60,35,5,0.42);border-radius:50% 50% 0 0 / 40% 40% 0 0;"></div>
+                                <div style="position:absolute;bottom:39%;left:51%;width:4%;height:20%;background:rgba(60,35,5,0.35);border-radius:50% 50% 0 0 / 40% 40% 0 0;"></div>
+                                <div class="caption">บทสรุป</div>
+                            </div>
+                        </div>
+                        <span class="pg-num left">20</span>
+                    </div>
+                </div>
+                <div class="page-right">
+                    <div class="paper">
+                        <div class="page-text-inner">
+                            <span class="chapter-label">บทสุดท้าย</span>
+                            <h2>บทสรุป</h2>
+                            <p>ชีวิตเรียบง่ายของเขาไม่ได้หายไป</p>
+                            <p>แต่มันถูกเติมเต็มด้วยความหมายใหม่</p>
+                            <p>ตั้งแต่วันที่ได้พบใครบางคน</p>
+                            <p>วันธรรมดาก็ไม่เคยธรรมดาอีกเลย</p>
+                            <p style="margin-top:28px;text-align:center;color:#9a7030;font-size:0.88em;letter-spacing:0.2em;">— จบ —</p>
+                        </div>
+                        <span class="pg-num right">21</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPREAD 12: ปกหลัง (L only) -->
+            <div class="spread" data-spread="12">
+                <div class="page-left"><div class="page-back"></div></div>
+                <div class="page-right"><div class="page-blank"></div></div>
+            </div>
+
+            <!-- Flip animation layer -->
+            <div id="flip-container"></div>
+        </div>
+
+        <button class="side-arrow" onclick="nextPage()">❯</button>
+    </div>
+
+    <div id="page-counter"></div>
+</div>
+
+<script>
+const TOTAL_SPREADS = 13;  // 0-12
+let current = 0;
+let animating = false;
+
+const spreads = document.querySelectorAll('.spread');
+const counter = document.getElementById('page-counter');
+
+const SPREAD_LABELS = ['ปก','สารบัญ','บทที่ 1','บทที่ 2','บทที่ 3','บทที่ 4','บทที่ 5','บทที่ 6','บทที่ 7','บทที่ 8','บทที่ 9','บทสรุป','ปกหลัง'];
+
+function showSpread(idx, direction) {
+    if (animating) return;
+    if (idx < 0 || idx >= TOTAL_SPREADS) return;
+    if (idx === current) return;
+
+    animating = true;
+    const fromSpread = spreads[current];
+    const toSpread   = spreads[idx];
+    const bookEl     = document.getElementById('book-spread');
+    const flipCont   = document.getElementById('flip-container');
+
+    // Clone the turning page for animation
+    const leaf = document.createElement('div');
+    leaf.style.cssText = `
+        position: absolute; top: 0; bottom: 0; width: 50%;
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+        z-index: 20;
+        border-radius: ${direction > 0 ? '0 6px 6px 0' : '6px 0 0 6px'};
+        overflow: hidden;
+        box-shadow: ${direction > 0 ? '4px 0 20px rgba(0,0,0,0.4)' : '-4px 0 20px rgba(0,0,0,0.4)'};
+        transition: transform 0.6s cubic-bezier(0.645,0.045,0.355,1);
+    `;
+
+    if (direction > 0) {
+        // Going forward: right half flips left
+        leaf.style.right = '0';
+        leaf.style.transformOrigin = 'left center';
+        leaf.style.left = '50%';
+
+        // Clone right page of current spread as front
+        const frontSrc = fromSpread.querySelector('.page-right');
+        if (frontSrc) leaf.innerHTML = frontSrc.innerHTML;
+
+        flipCont.appendChild(leaf);
+        fromSpread.classList.remove('active');
+        toSpread.classList.add('active');
+        toSpread.style.opacity = '0';
+
+        requestAnimationFrame(() => {
+            leaf.style.transform = 'rotateY(-180deg)';
+        });
+    } else {
+        // Going backward: left half flips right
+        leaf.style.left = '0';
+        leaf.style.transformOrigin = 'right center';
+
+        // Clone left page of current spread as front
+        const frontSrc = fromSpread.querySelector('.page-left');
+        if (frontSrc) leaf.innerHTML = frontSrc.innerHTML;
+
+        flipCont.appendChild(leaf);
+        fromSpread.classList.remove('active');
+        toSpread.classList.add('active');
+        toSpread.style.opacity = '0';
+
+        requestAnimationFrame(() => {
+            leaf.style.transform = 'rotateY(180deg)';
+        });
+    }
+
+    // Fade in destination
+    setTimeout(() => { toSpread.style.opacity = '1'; }, 120);
+
+    // Cleanup
+    setTimeout(() => {
+        flipCont.innerHTML = '';
+        toSpread.style.opacity = '';
+        animating = false;
+        current = idx;
+        updateCounter();
+    }, 650);
+}
+
+function nextPage() {
+    if (current < TOTAL_SPREADS - 1) showSpread(current + 1, 1);
+}
+
+function prevPage() {
+    if (current > 0) showSpread(current - 1, -1);
+}
+
+function updateCounter() {
+    counter.textContent = SPREAD_LABELS[current] ?? `หน้า ${current + 1}`;
+}
+
+function startReading() {
+    document.getElementById('cover-screen').style.display = 'none';
+    const bc = document.getElementById('book-container');
+    bc.classList.add('show');
+    spreads[0].classList.add('active');
+    updateCounter();
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+    if (!document.getElementById('book-container').classList.contains('show')) return;
+    if (e.key === 'ArrowRight') nextPage();
+    if (e.key === 'ArrowLeft')  prevPage();
+});
+
+// Swipe support
+let touchStartX = 0;
+document.getElementById('book-container') && document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+    if (!document.getElementById('book-container').classList.contains('show')) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) { dx < 0 ? nextPage() : prevPage(); }
+}, { passive: true });
+
+// Page flip sound
+function playSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const len = ctx.sampleRate * 0.13;
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * 0.18;
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const flt = ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.value = 3800; flt.Q.value = 0.5;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.55, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.13);
+        src.connect(flt); flt.connect(gain); gain.connect(ctx.destination);
+        src.start(); src.stop(ctx.currentTime + 0.13);
+    } catch(e) {}
+}
+
+// Wrap nextPage/prevPage to include sound
+const _next = nextPage, _prev = prevPage;
+window.nextPage = () => { if (current < TOTAL_SPREADS-1) { playSound(); showSpread(current+1, 1); } };
+window.prevPage = () => { if (current > 0) { playSound(); showSpread(current-1, -1); } };
+</script>
+</body>
+</html>
