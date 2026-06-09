@@ -686,6 +686,7 @@
 
 <script>
 const TOTAL_SPREADS = 13;  // 0-12
+const MAX_READABLE = 5;   // เปิดอ่านได้ถึงบทที่ 4
 let current = 0;
 let animating = false;
 
@@ -824,7 +825,7 @@ function playSound() {
 
 // Wrap nextPage/prevPage to include sound
 const _next = nextPage, _prev = prevPage;
-window.nextPage = () => { if (current < TOTAL_SPREADS-1) { playSound(); showSpread(current+1, 1); } };
+window.nextPage = () => { if (current < MAX_READABLE) { playSound(); showSpread(current+1, 1); } };
 window.prevPage = () => { if (current > 0) { playSound(); showSpread(current-1, -1); } };
 </script>
 </body>
