@@ -14,6 +14,7 @@
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             min-height: 100vh;
+            perspective: 1400px;
         }
 
         /* ── COVER SCREEN ── */
@@ -23,11 +24,34 @@
             text-align: center;
             width: min(90vw, 440px);
             height: min(88vh, 680px);
-            background: url('f443eb00-dc9f-4ec7-a6b8-4e4a54ed175b.png') center/cover no-repeat;
             border-radius: 3px 14px 14px 3px;
             box-shadow: 0 40px 100px rgba(0,0,0,0.7), -8px 0 24px rgba(0,0,0,0.5),
                         inset 1px 0 0 rgba(255,220,130,0.2);
             padding: 48px 44px 52px; position: relative; overflow: hidden;
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform;
+            animation: coverFloat 7s ease-in-out infinite;
+        }
+        #cover-screen .cover-bg {
+            position: absolute; inset: -8%;
+            background: url('f443eb00-dc9f-4ec7-a6b8-4e4a54ed175b.png') center/cover no-repeat;
+            border-radius: 3px 14px 14px 3px;
+            z-index: -1;
+            animation: coverPan 14s ease-in-out infinite alternate;
+            transform: translateZ(-30px) scale(1.15);
+            will-change: transform;
+        }
+        #cover-screen h1, #cover-screen .open-btn {
+            transform: translateZ(50px);
+        }
+        @keyframes coverFloat {
+            0%, 100% { transform: rotateY(-3deg) rotateX(1.5deg) translateY(0); }
+            50%      { transform: rotateY(3deg)  rotateX(-1.5deg) translateY(-6px); }
+        }
+        @keyframes coverPan {
+            0%   { transform: translateZ(-30px) scale(1.15) translate(-1%, 0); }
+            100% { transform: translateZ(-30px) scale(1.22) translate(2%, -1%); }
         }
         #cover-screen .cover-overlay {
             position: absolute; inset: 0;
@@ -40,16 +64,24 @@
         }
         #cover-screen > * { position: relative; z-index: 1; }
         #cover-screen h1 {
-            font-family: 'Sarabun', sans-serif;
-            font-size: clamp(2.4em, 6.5vw, 3.8em);
-            color: rgba(255, 248, 228, 0.92);
             margin: 0;
-            line-height: 1.2;
-            letter-spacing: 0.22em;
-            font-weight: 300;
-            text-shadow:
-                0 0 30px rgba(240,180,80,0.5),
-                0 2px 16px rgba(0,0,0,0.85);
+            margin-top: -10px;
+            width: 92%;
+            display: block;
+        }
+        #cover-screen h1 svg {
+            width: 100%; height: auto; overflow: visible;
+            display: block;
+        }
+        #cover-screen h1 svg {
+            mix-blend-mode: overlay;
+        }
+        #cover-screen h1 svg text {
+            font-family: 'Mali', cursive;
+            font-size: 30px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            fill: #ffd9a0;
         }
         .cover-divider { width: 60px; height: 1px; background: linear-gradient(to right, transparent, rgba(255,220,150,0.6), transparent); margin: 14px auto; }
         #cover-screen .subtitle { font-size: clamp(0.85em,2.2vw,1em); color: rgba(255,240,200,0.9); margin-bottom: 10px; line-height: 1.9; font-weight: 300; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
@@ -149,7 +181,16 @@
                 linear-gradient(172deg, #f5ebb8 0%, #eedf90 42%, #e8d472 100%);
             position: relative;
         }
+        /* ghost image behind every page */
         .paper::before {
+            content: ''; position: absolute; inset: 0;
+            background: url('f443eb00-dc9f-4ec7-a6b8-4e4a54ed175b.png') center/cover no-repeat;
+            opacity: 0.06;
+            mix-blend-mode: multiply;
+            filter: sepia(0.6) contrast(0.9);
+            pointer-events: none; z-index: 0;
+        }
+        .paper::after {
             content: ''; position: absolute; inset: 0;
             background:
                 linear-gradient(to right, rgba(100,60,5,0.09) 0%, transparent 8%),
@@ -158,6 +199,24 @@
                 linear-gradient(to top, rgba(100,60,5,0.07) 0%, transparent 6%);
             pointer-events: none; z-index: 1;
         }
+
+        /* corner ornaments on every page */
+        .page-text-inner::before, .toc-inner::before, .toc-inner::after {
+            content: none;
+        }
+        .page-corner {
+            position: absolute; font-size: 0.55em;
+            color: rgba(130,90,20,0.35); z-index: 4;
+            font-family: serif; line-height: 1;
+        }
+        .page-corner.tl { top: 10px; left: 12px; }
+        .page-corner.tr { top: 10px; right: 12px; }
+        .page-corner.bl { bottom: 28px; left: 12px; }
+        .page-corner.br { bottom: 28px; right: 12px; }
+        .page-corner.tl::before { content: '❧'; }
+        .page-corner.tr::before { content: '❧'; transform: scaleX(-1); display: inline-block; }
+        .page-corner.bl::before { content: '❧'; transform: rotate(180deg) scaleX(-1); display: inline-block; }
+        .page-corner.br::before { content: '❧'; transform: rotate(180deg); display: inline-block; }
 
         /* ── COVER PAGE (inside) ── */
         .page-cover-inner {
@@ -179,15 +238,112 @@
 
         /* ── BLANK (empty left side for first spread) ── */
         .page-blank { width: 100%; height: 100%; background: linear-gradient(155deg, #b8934a 0%, #966e28 100%); }
+        .page-watermark {
+            width: 100%; height: 100%;
+            background: linear-gradient(155deg, #b8934a 0%, #966e28 100%);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        .page-watermark::before {
+            content: ''; position: absolute; inset: 0;
+            background: url('f443eb00-dc9f-4ec7-a6b8-4e4a54ed175b.png') center/cover no-repeat;
+            opacity: 0.22;
+            mix-blend-mode: multiply;
+            filter: sepia(0.4) contrast(0.95);
+        }
+        .page-watermark::after {
+            content: ''; position: absolute; inset: 14px;
+            border: 1px solid rgba(74,44,12,0.35);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+        .watermark-mark {
+            position: relative; z-index: 1;
+            font-family: 'Mali', cursive;
+            font-size: clamp(0.7em, 1.4vw, 0.85em);
+            color: rgba(50,28,8,0.55);
+            letter-spacing: 0.4em;
+            text-transform: none;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
 
         /* ── TABLE OF CONTENTS ── */
-        .toc-inner { width: 100%; height: 100%; padding: 44px 36px 44px 30px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 2; }
-        .toc-title { font-family: 'Mali', cursive; font-size: clamp(1.2em,2.5vw,1.7em); color: #301808; margin-bottom: 28px; letter-spacing: 0.04em; }
-        .toc-item { display: flex; align-items: baseline; margin-bottom: 14px; gap: 6px; }
-        .toc-chapter { font-size: clamp(0.78em,1.6vw,0.92em); color: #9a7030; min-width: 70px; font-weight: 600; letter-spacing: 0.06em; }
-        .toc-name { font-size: clamp(0.82em,1.7vw,0.96em); color: #3e2808; font-weight: 300; flex: 1; }
-        .toc-dots { flex: 1; border-bottom: 1px dotted rgba(130,90,20,0.3); margin: 0 6px 3px; }
-        .toc-page-n { font-size: 0.78em; color: #9a7030; min-width: 20px; text-align: right; }
+        .toc-inner {
+            width: 100%; height: 100%; padding: 38px 34px 38px 30px;
+            display: flex; flex-direction: column; justify-content: center;
+            position: relative; z-index: 2;
+        }
+        .toc-inner::before {
+            content: ''; position: absolute; top: 26px; left: 30px; right: 34px;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(130,90,20,0.5), transparent);
+        }
+        .toc-inner::after {
+            content: ''; position: absolute; bottom: 26px; left: 30px; right: 34px;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(130,90,20,0.5), transparent);
+        }
+        .toc-header {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+        .toc-ornament-top {
+            font-size: 0.9em; color: rgba(130,90,20,0.55);
+            letter-spacing: 0.6em; margin-bottom: 6px;
+        }
+        .toc-title {
+            font-family: 'Mali', cursive;
+            font-size: clamp(1.4em,2.8vw,1.9em);
+            color: #301808;
+            margin: 0 0 6px;
+            letter-spacing: 0.08em;
+            text-shadow: 1px 1px 0 rgba(255,240,200,0.4);
+        }
+        .toc-subtitle {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.65em;
+            color: rgba(130,90,20,0.75);
+            letter-spacing: 0.45em;
+            text-transform: none;
+            font-weight: 400;
+        }
+        .toc-divider {
+            width: 60px; height: 1px;
+            background: linear-gradient(to right, transparent, rgba(130,90,20,0.6), transparent);
+            margin: 8px auto 0;
+            position: relative;
+        }
+        .toc-divider::before {
+            content: '✦';
+            position: absolute; top: -8px; left: 50%;
+            transform: translateX(-50%);
+            color: rgba(130,90,20,0.55);
+            background: rgba(232,210,150,0.4);
+            padding: 0 6px;
+            font-size: 0.7em;
+        }
+        .toc-item {
+            display: flex; align-items: baseline;
+            margin-bottom: 11px; gap: 6px;
+            transition: transform 0.2s ease;
+        }
+        .toc-item:hover { transform: translateX(3px); }
+        .toc-chapter {
+            font-family: 'Mali', cursive;
+            font-size: clamp(0.78em,1.6vw,0.92em);
+            color: #8a5a18; min-width: 72px;
+            font-weight: 700; letter-spacing: 0.04em;
+            font-style: italic;
+        }
+        .toc-name { font-size: clamp(0.82em,1.7vw,0.96em); color: #3e2808; font-weight: 400; flex: 1; }
+        .toc-dots { flex: 1; border-bottom: 1px dotted rgba(130,90,20,0.4); margin: 0 6px 3px; }
+        .toc-page-n {
+            font-family: 'Mali', cursive;
+            font-size: 0.85em; color: #8a5a18;
+            min-width: 22px; text-align: right;
+            font-weight: 600;
+        }
 
         /* ── IMAGE PAGE ── */
         .page-img-inner { width: 100%; height: 100%; padding: 30px 20px 30px 32px; display: flex; align-items: center; position: relative; z-index: 2; }
@@ -246,6 +402,61 @@
             font-style: italic; color: #6a3c10;
         }
         p:last-child { margin-bottom: 0; }
+
+        /* ── PREFACE STYLING ── */
+        .preface-header {
+            text-align: center;
+            margin-bottom: 14px;
+            position: relative;
+        }
+        .preface-ornament {
+            font-size: 0.85em;
+            color: rgba(130,90,20,0.55);
+            letter-spacing: 0.7em;
+            margin-bottom: 6px;
+        }
+        .preface-title {
+            font-family: 'Mali', cursive;
+            font-size: clamp(1.3em, 2.6vw, 1.8em);
+            color: #2e1606;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            margin: 0 0 4px;
+            text-shadow: 1px 1px 0 rgba(255,240,200,0.4);
+        }
+        .preface-subtitle {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.62em;
+            color: rgba(130,90,20,0.7);
+            letter-spacing: 0.45em;
+            font-weight: 400;
+            margin-bottom: 10px;
+        }
+        .preface-divider {
+            width: 70px; height: 1px;
+            background: linear-gradient(to right, transparent, rgba(130,90,20,0.55), transparent);
+            margin: 6px auto 0;
+            position: relative;
+        }
+        .preface-divider::before {
+            content: '✦';
+            position: absolute; top: -8px; left: 50%;
+            transform: translateX(-50%);
+            color: rgba(130,90,20,0.55);
+            background: rgba(232,210,150,0.4);
+            padding: 0 6px;
+            font-size: 0.7em;
+        }
+        .drop-cap::first-letter {
+            font-family: 'Mali', cursive;
+            font-size: 2.4em;
+            float: left;
+            line-height: 0.95;
+            padding: 4px 8px 0 0;
+            color: #6a3c10;
+            font-weight: 700;
+            text-shadow: 1px 1px 0 rgba(255,240,200,0.5);
+        }
         .pg-num { position: absolute; bottom: 14px; font-size: 0.66em; color: rgba(100,65,15,0.45); letter-spacing: 0.1em; z-index: 3; }
         .pg-num.left { left: 22px; }
         .pg-num.right { right: 22px; }
@@ -265,8 +476,18 @@
 
 <!-- ปกก่อนเปิด -->
 <div id="cover-screen">
+    <div class="cover-bg"></div>
     <div class="cover-overlay"></div>
-    <h1>เงาที่เธอ<br>ไม่เคยเห็น</h1>
+    <h1 class="curved-title">
+        <svg viewBox="0 0 400 110" preserveAspectRatio="xMidYMid meet" aria-label="เงาที่เธอไม่เคยเห็น">
+            <defs>
+                <path id="titleCurve" d="M 25,85 Q 200,15 375,85" fill="none" />
+            </defs>
+            <text text-anchor="middle">
+                <textPath href="#titleCurve" startOffset="50%">เงาที่เธอไม่เคยเห็น</textPath>
+            </text>
+        </svg>
+    </h1>
     <button class="open-btn" onclick="startReading()">เปิดอ่าน</button>
 </div>
 
@@ -279,7 +500,7 @@
 
             <!-- SPREAD 0: ปกใน (right only, left = back cover color) -->
             <div class="spread" data-spread="0">
-                <div class="page-left"><div class="page-blank"></div></div>
+                <div class="page-left"><div class="page-watermark"><span class="watermark-mark">— เงาที่เธอไม่เคยเห็น —</span></div></div>
                 <div class="page-right">
                     <div class="page-cover-inner">
                         <div class="cover-ornament" style="font-size:1.1em;margin-bottom:12px;">— ✦ —</div>
@@ -295,8 +516,17 @@
             <div class="spread" data-spread="1">
                 <div class="page-left">
                     <div class="paper">
+                        <span class="page-corner tl"></span>
+                        <span class="page-corner tr"></span>
+                        <span class="page-corner bl"></span>
+                        <span class="page-corner br"></span>
                         <div class="toc-inner">
-                            <div class="toc-title">สารบัญ</div>
+                            <div class="toc-header">
+                                <div class="toc-ornament-top">— ✦ —</div>
+                                <div class="toc-title">สารบัญ</div>
+                                <div class="toc-subtitle">CONTENTS</div>
+                                <div class="toc-divider"></div>
+                            </div>
                             <div class="toc-item"><span class="toc-chapter">คำนำ</span><span class="toc-dots"></span><span class="toc-page-n">iii</span></div>
                             <div class="toc-item"><span class="toc-chapter">บทที่ 1</span><span class="toc-name">การเจอกันในวันที่จากลา</span><span class="toc-dots"></span><span class="toc-page-n">3</span></div>
                             <div class="toc-item"><span class="toc-chapter">บทที่ 2</span><span class="toc-name">การพบกันครั้งแรก</span><span class="toc-dots"></span><span class="toc-page-n">5</span></div>
@@ -314,10 +544,18 @@
                 </div>
                 <div class="page-right">
                     <div class="paper">
+                        <span class="page-corner tl"></span>
+                        <span class="page-corner tr"></span>
+                        <span class="page-corner bl"></span>
+                        <span class="page-corner br"></span>
                         <div class="page-text-inner">
-                            <span class="chapter-label">คำนำ</span>
-                            <h2>บทนำ</h2>
-                            <p>คุณเชื่อเรื่อง <em>'จังหวะเวลา'</em> ไหม?</p>
+                            <div class="preface-header">
+                                <div class="preface-ornament">— ✦ —</div>
+                                <div class="preface-title">บทนำ</div>
+                                <div class="preface-subtitle">PREFACE</div>
+                                <div class="preface-divider"></div>
+                            </div>
+                            <p class="drop-cap">คุณเชื่อเรื่อง <em>'จังหวะเวลา'</em> ไหม?</p>
                             <p>บางครั้งโลกก็เหวี่ยงเราให้มาเจอกันในวันที่ต้องจากลา แต่แล้ววันหนึ่งก็หมุนเอาความคิดถึงวนกลับมาอีกครั้งในจอมือถือ… เรื่องราวของเราเริ่มต้นและเดินทางผ่านการนั่งกดเกมด้วยกัน จากเกมหนึ่งย้ายมาสู่อีกเกมหนึ่ง</p>
                             <p>บันทึกเล่มนี้รวบรวมเรื่องราวที่เกิดขึ้นจริงทั้งหมด ทั้งรอยยิ้ม เสียงหัวเราะ และรายละเอียดเล็กๆ น้อยๆ ของเธอที่ผมคอยนั่งจำอยู่ฝ่ายเดียว มันอาจไม่ใช่เรื่องราวที่จบสวยเหมือนในนิยาย แต่อย่างน้อยครั้งหนึ่ง… มันก็เคยเป็นช่วงเวลาที่ดีที่สุดในชีวิตจริงของผม</p>
                         </div>
@@ -330,23 +568,166 @@
             <div class="spread" data-spread="2">
                 <div class="page-left">
                     <div class="paper">
-                        <div class="page-img-inner">
-                            <div class="img-art">
-                                <div class="sky"></div><div class="sun"></div>
-                                <div class="hill hill1"></div><div class="hill hill2"></div>
-                                <div class="ground"></div><div class="road"></div>
-                                <div class="tree" style="left:22%;bottom:39%">
-                                    <div class="crown" style="border-left-width:10px;border-right-width:10px;border-bottom-width:18px;"></div>
-                                    <div class="crown" style="border-left-width:8px;border-right-width:8px;border-bottom-width:14px;margin-top:-6px;"></div>
-                                    <div class="trunk" style="height:22px;"></div>
-                                </div>
-                                <div class="tree" style="right:28%;bottom:39%">
-                                    <div class="crown" style="border-left-width:8px;border-right-width:8px;border-bottom-width:15px;"></div>
-                                    <div class="crown" style="border-left-width:6px;border-right-width:6px;border-bottom-width:12px;margin-top:-5px;"></div>
-                                    <div class="trunk" style="height:18px;"></div>
-                                </div>
-                                <div class="caption">บทที่ ๑</div>
-                            </div>
+                        <div class="page-img-inner" style="padding:0;overflow:hidden;position:relative;">
+                            <img src="17e8c9bf-515c-4958-a134-4f61f9c98d83.png" alt="บทที่ 1" style="width:100%;height:100%;object-fit:cover;display:block;"/>
+                            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,5,0,0.08) 0%,rgba(10,5,0,0.35) 100%);pointer-events:none;"></div>
+                            <span style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-family:'Sarabun',sans-serif;font-size:0.62em;color:rgba(255,230,180,0.7);letter-spacing:0.2em;">บทที่ ๑</span>
+                            <!-- old svg kept for fallback -->
+                            <svg viewBox="0 0 260 340" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+                              <defs>
+                                <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stop-color="#1a2a5a"/>
+                                  <stop offset="100%" stop-color="#0e1a40"/>
+                                </linearGradient>
+                                <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0">
+                                  <stop offset="0%" stop-color="#1e3070"/>
+                                  <stop offset="100%" stop-color="#2a3e88"/>
+                                </linearGradient>
+                                <linearGradient id="btnGrad" x1="0" y1="0" x2="1" y2="0">
+                                  <stop offset="0%" stop-color="#c87010"/>
+                                  <stop offset="100%" stop-color="#f0a020"/>
+                                </linearGradient>
+                                <linearGradient id="slotGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stop-color="#1e2e6a"/>
+                                  <stop offset="100%" stop-color="#162258"/>
+                                </linearGradient>
+                                <radialGradient id="glowCenter" cx="50%" cy="50%" r="50%">
+                                  <stop offset="0%" stop-color="#5060cc" stop-opacity="0.5"/>
+                                  <stop offset="100%" stop-color="#5060cc" stop-opacity="0"/>
+                                </radialGradient>
+                                <clipPath id="phoneClip">
+                                  <rect x="10" y="6" width="240" height="328" rx="16"/>
+                                </clipPath>
+                              </defs>
+
+                              <!-- phone frame -->
+                              <rect x="10" y="6" width="240" height="328" rx="16" fill="#0e1838" stroke="#3a4a90" stroke-width="2"/>
+                              <g clip-path="url(#phoneClip)">
+
+                                <!-- bg -->
+                                <rect x="10" y="6" width="240" height="328" fill="url(#bgGrad)"/>
+                                <!-- subtle diamond pattern bg -->
+                                <rect x="60" y="80" width="80" height="80" rx="4" fill="rgba(80,100,200,0.08)" transform="rotate(45 100 120)"/>
+                                <rect x="100" y="100" width="60" height="60" rx="4" fill="rgba(80,100,200,0.06)" transform="rotate(45 130 130)"/>
+
+                                <!-- header bar -->
+                                <rect x="10" y="6" width="240" height="30" fill="url(#headerGrad)"/>
+                                <!-- back arrow -->
+                                <polygon points="24,21 30,16 30,26" fill="#a0b0e0"/>
+                                <!-- title -->
+                                <text x="130" y="25" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#d0e0ff" font-weight="bold" letter-spacing="1">โหมดจัดอันดับ</text>
+                                <!-- rank icon small -->
+                                <polygon points="200,15 204,22 208,22 205,27 206,33 200,30 194,33 195,27 192,22 196,22" fill="#f0c040" transform="scale(0.6) translate(130,4)"/>
+
+                                <!-- rank bar -->
+                                <rect x="10" y="36" width="240" height="16" fill="rgba(20,30,80,0.7)"/>
+                                <text x="90" y="47" text-anchor="middle" font-family="sans-serif" font-size="6.5" fill="#8090c8">Diamond –</text>
+                                <text x="170" y="47" text-anchor="middle" font-family="sans-serif" font-size="6.5" fill="#8090c8">Conqueror 75 ดาว</text>
+
+                                <!-- center glow -->
+                                <circle cx="130" cy="155" r="55" fill="url(#glowCenter)"/>
+
+                                <!-- player slots row: 5 slots -->
+                                <!-- slot 1 (?) -->
+                                <rect x="18" y="95" width="38" height="42" rx="5" fill="url(#slotGrad)" stroke="#2a3878" stroke-width="1"/>
+                                <text x="37" y="122" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#3a4a90" font-weight="bold">?</text>
+                                <!-- slot 2 (?) -->
+                                <rect x="60" y="95" width="38" height="42" rx="5" fill="url(#slotGrad)" stroke="#2a3878" stroke-width="1"/>
+                                <text x="79" y="122" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#3a4a90" font-weight="bold">?</text>
+
+                                <!-- slot 3 CENTER - yuri_kitsune (ผู้เล่น) -->
+                                <rect x="102" y="88" width="56" height="56" rx="7" fill="#1e2e70" stroke="#6070cc" stroke-width="1.5"/>
+                                <!-- christmas hat on top -->
+                                <polygon points="130,91 124,100 136,100" fill="#e03030"/>
+                                <rect x="122" y="100" width="16" height="4" rx="2" fill="#f0f0f0"/>
+                                <circle cx="130" cy="91" r="3" fill="#f0f0f0"/>
+                                <!-- face circle -->
+                                <circle cx="130" cy="113" r="14" fill="#c8a860" stroke="#e0c070" stroke-width="1"/>
+                                <!-- simple face -->
+                                <circle cx="126" cy="111" r="2" fill="#4a3010"/>
+                                <circle cx="134" cy="111" r="2" fill="#4a3010"/>
+                                <path d="M126,117 Q130,120 134,117" stroke="#4a3010" stroke-width="1.2" fill="none"/>
+                                <!-- name -->
+                                <text x="130" y="154" text-anchor="middle" font-family="sans-serif" font-size="6.5" fill="#d0e0ff" font-weight="bold">yuri_kitsune</text>
+                                <!-- rank badge -->
+                                <rect x="106" y="157" width="48" height="10" rx="5" fill="#3040a0"/>
+                                <text x="130" y="165" text-anchor="middle" font-family="sans-serif" font-size="5.5" fill="#f0c040">Overlord Co... ⭐22</text>
+
+                                <!-- slot 4 (?) -->
+                                <rect x="162" y="95" width="38" height="42" rx="5" fill="url(#slotGrad)" stroke="#2a3878" stroke-width="1"/>
+                                <text x="181" y="122" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#3a4a90" font-weight="bold">?</text>
+                                <!-- slot 5 (?) -->
+                                <rect x="204" y="95" width="38" height="42" rx="5" fill="url(#slotGrad)" stroke="#2a3878" stroke-width="1"/>
+                                <text x="223" y="122" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#3a4a90" font-weight="bold">?</text>
+
+                                <!-- right panel: player list -->
+                                <rect x="148" y="174" width="100" height="108" rx="6" fill="rgba(14,22,58,0.85)" stroke="#2a3878" stroke-width="1"/>
+                                <!-- panel header -->
+                                <rect x="148" y="174" width="100" height="16" rx="6" fill="#1e2e70"/>
+                                <rect x="148" y="182" width="100" height="8" fill="#1e2e70"/>
+                                <text x="198" y="185" text-anchor="middle" font-family="sans-serif" font-size="6" fill="#8090c8">ไม่มีห้องที่แนะนำในขณะนี้</text>
+
+                                <!-- player rows -->
+                                <!-- row 1 -->
+                                <rect x="152" y="193" width="14" height="14" rx="3" fill="#3a4a20"/>
+                                <text x="172" y="202" font-family="sans-serif" font-size="6" fill="#d0e0ff">のつノも</text>
+                                <text x="172" y="210" font-family="sans-serif" font-size="5" fill="#6070a8">Commander I</text>
+                                <circle cx="240" cy="199" r="6" fill="#2a3a80" stroke="#4050b0" stroke-width="1"/>
+                                <text x="240" y="202" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#8090d0">+</text>
+
+                                <!-- row 2 (Butterfly - the one the story is about) -->
+                                <rect x="152" y="212" width="14" height="14" rx="3" fill="#e87020"/>
+                                <!-- butterfly icon mini -->
+                                <path d="M159,218 C157,214 152,213 151,215 C150,218 154,220 159,219 Z" fill="#f09030" transform="translate(1,1)"/>
+                                <path d="M159,218 C161,214 166,213 167,215 C168,218 164,220 159,219 Z" fill="#f09030" transform="translate(1,1)"/>
+                                <text x="172" y="221" font-family="sans-serif" font-size="6" fill="#f0d080" font-weight="bold">Butterfly 🦋</text>
+                                <text x="172" y="229" font-family="sans-serif" font-size="5" fill="#6070a8">Diamond I</text>
+                                <circle cx="240" cy="220" r="6" fill="#2a3a80" stroke="#4050b0" stroke-width="1"/>
+                                <text x="240" y="223" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#8090d0">+</text>
+
+                                <!-- row 3 -->
+                                <rect x="152" y="231" width="14" height="14" rx="3" fill="#5a3a20"/>
+                                <text x="172" y="240" font-family="sans-serif" font-size="6" fill="#d0e0ff">DuckzillaX"</text>
+                                <text x="172" y="248" font-family="sans-serif" font-size="5" fill="#6070a8">Commander...</text>
+                                <circle cx="240" cy="238" r="6" fill="#2a3a80" stroke="#4050b0" stroke-width="1"/>
+                                <text x="240" y="241" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#8090d0">+</text>
+
+                                <!-- mascot cat bottom left -->
+                                <!-- body -->
+                                <ellipse cx="42" cy="265" rx="16" ry="18" fill="#80c0e0"/>
+                                <!-- head -->
+                                <circle cx="42" cy="244" r="14" fill="#80c0e0"/>
+                                <!-- ears -->
+                                <polygon points="32,234 28,224 38,230" fill="#80c0e0"/>
+                                <polygon points="52,234 56,224 46,230" fill="#80c0e0"/>
+                                <polygon points="33,233 30,225 37,229" fill="#f090a0"/>
+                                <polygon points="51,233 54,225 47,229" fill="#f090a0"/>
+                                <!-- face -->
+                                <circle cx="37" cy="243" r="2.5" fill="#2a1a40"/>
+                                <circle cx="47" cy="243" r="2.5" fill="#2a1a40"/>
+                                <path d="M38,249 Q42,252 46,249" stroke="#2a1a40" stroke-width="1.2" fill="none"/>
+                                <!-- hat on cat -->
+                                <ellipse cx="42" cy="231" rx="12" ry="3" fill="#3060c0"/>
+                                <rect x="36" y="218" width="12" height="13" rx="2" fill="#4070d0"/>
+                                <circle cx="42" cy="218" r="3" fill="#f0f0a0"/>
+
+                                <!-- chat box -->
+                                <rect x="62" y="272" width="80" height="16" rx="4" fill="rgba(14,22,58,0.8)" stroke="#2a3878" stroke-width="1"/>
+                                <text x="72" y="283" font-family="sans-serif" font-size="6.5" fill="#6070a8">💬 พูดคุย</text>
+
+                                <!-- start button -->
+                                <rect x="148" y="290" width="100" height="22" rx="11" fill="url(#btnGrad)"/>
+                                <text x="198" y="305" text-anchor="middle" font-family="sans-serif" font-size="8" fill="white" font-weight="bold">เริ่มการจับคู่</text>
+
+                                <!-- caption -->
+                                <text x="130" y="326" text-anchor="middle" font-family="sans-serif" font-size="6.5" fill="rgba(160,170,220,0.5)" letter-spacing="1.5">บทที่ ๑</text>
+                              </g>
+
+                              <!-- phone side buttons -->
+                              <rect x="8" y="80" width="3" height="20" rx="1.5" fill="#2a3878"/>
+                              <rect x="8" y="106" width="3" height="20" rx="1.5" fill="#2a3878"/>
+                              <rect x="249" y="90" width="3" height="28" rx="1.5" fill="#2a3878"/>
+                            </svg>
                         </div>
                         <span class="pg-num left">2</span>
                     </div>
@@ -371,16 +752,10 @@
             <div class="spread" data-spread="3">
                 <div class="page-left">
                     <div class="paper">
-                        <div class="page-img-inner">
-                            <div class="img-art">
-                                <div class="sky" style="background:linear-gradient(180deg,#c8a850 0%,#dfc070 50%,#ecd888 100%);"></div>
-                                <div class="sun" style="top:22%;width:12%;padding-top:12%;"></div>
-                                <div class="hill hill1"></div><div class="hill hill2" style="height:26%;"></div>
-                                <div class="ground"></div>
-                                <div style="position:absolute;bottom:39%;left:38%;width:5%;height:22%;background:rgba(60,35,5,0.45);border-radius:50% 50% 0 0 / 40% 40% 0 0;"></div>
-                                <div style="position:absolute;bottom:39%;left:54%;width:4%;height:19%;background:rgba(60,35,5,0.35);border-radius:50% 50% 0 0 / 40% 40% 0 0;"></div>
-                                <div class="caption">บทที่ ๒</div>
-                            </div>
+                        <div class="page-img-inner" style="padding:0;overflow:hidden;position:relative;">
+                            <img src="a596365a-3dde-4ce1-a85e-032d18964791.png" alt="บทที่ 2" style="width:100%;height:100%;object-fit:cover;display:block;"/>
+                            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,5,0,0.08) 0%,rgba(10,5,0,0.35) 100%);pointer-events:none;"></div>
+                            <span style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-family:'Sarabun',sans-serif;font-size:0.62em;color:rgba(255,230,180,0.7);letter-spacing:0.2em;">บทที่ ๒</span>
                         </div>
                         <span class="pg-num left">4</span>
                     </div>
@@ -405,14 +780,10 @@
             <div class="spread" data-spread="4">
                 <div class="page-left">
                     <div class="paper">
-                        <div class="page-img-inner">
-                            <div class="img-art">
-                                <div class="sky" style="background:linear-gradient(180deg,#e0c060 0%,#f0d47a 50%,#f8e89a 100%);"></div>
-                                <div class="sun" style="top:14%;width:16%;padding-top:16%;background:radial-gradient(circle,rgba(255,245,160,0.95) 0%,rgba(230,180,60,0.5) 55%,transparent 75%);"></div>
-                                <div class="ground"></div><div class="hill hill1" style="height:24%;"></div>
-                                <div style="position:absolute;bottom:40%;left:25%;width:4px;height:4px;background:rgba(180,120,20,0.4);border-radius:50%;box-shadow:8px 4px 0 rgba(180,120,20,0.35),18px -2px 0 rgba(180,120,20,0.3),28px 6px 0 rgba(180,120,20,0.4),40px 0 0 rgba(180,120,20,0.3);"></div>
-                                <div class="caption">บทที่ ๓</div>
-                            </div>
+                        <div class="page-img-inner" style="padding:0;overflow:hidden;position:relative;">
+                            <img src="9fe4fb0f-1f33-4660-8dba-6f288b107bf7.png" alt="บทที่ 3" style="width:100%;height:100%;object-fit:cover;display:block;"/>
+                            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,5,0,0.08) 0%,rgba(10,5,0,0.35) 100%);pointer-events:none;"></div>
+                            <span style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-family:'Sarabun',sans-serif;font-size:0.62em;color:rgba(255,230,180,0.7);letter-spacing:0.2em;">บทที่ ๓</span>
                         </div>
                         <span class="pg-num left">6</span>
                     </div>
@@ -437,14 +808,10 @@
             <div class="spread" data-spread="5">
                 <div class="page-left">
                     <div class="paper">
-                        <div class="page-img-inner">
-                            <div class="img-art">
-                                <div class="sky" style="background:linear-gradient(180deg,#b89040 0%,#cca850 50%,#dfc070 100%);"></div>
-                                <div class="ground" style="background:linear-gradient(180deg,#a07020 0%,#8a5c10 60%,#744808 100%);"></div>
-                                <div class="hill hill1" style="background:rgba(100,65,5,0.3);height:28%;"></div>
-                                <div style="position:absolute;bottom:46%;left:47%;width:14px;height:12px;background:rgba(160,80,20,0.25);clip-path:polygon(50% 100%,0% 35%,15% 0%,50% 25%,85% 0%,100% 35%);"></div>
-                                <div class="caption">บทที่ ๔</div>
-                            </div>
+                        <div class="page-img-inner" style="padding:0;overflow:hidden;position:relative;">
+                            <img src="4.png" alt="บทที่ 4" style="width:100%;height:100%;object-fit:cover;display:block;"/>
+                            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,5,0,0.08) 0%,rgba(10,5,0,0.35) 100%);pointer-events:none;"></div>
+                            <span style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-family:'Sarabun',sans-serif;font-size:0.62em;color:rgba(255,230,180,0.7);letter-spacing:0.2em;">บทที่ ๔</span>
                         </div>
                         <span class="pg-num left">8</span>
                     </div>
@@ -787,6 +1154,40 @@ function startReading() {
     spreads[0].classList.add('active');
     updateCounter();
 }
+
+// 3D tilt effect on cover (overrides auto-float on hover)
+(function() {
+    const cover = document.getElementById('cover-screen');
+    if (!cover) return;
+    const MAX_TILT = 14;
+    let raf = null;
+    function onEnter() {
+        cover.style.animationPlayState = 'paused';
+    }
+    function onMove(e) {
+        const rect = cover.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        const rx = (-y * MAX_TILT).toFixed(2);
+        const ry = (x * MAX_TILT).toFixed(2);
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+            cover.style.animation = 'none';
+            cover.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) scale(1.02)`;
+            cover.style.transition = 'transform 0.08s linear';
+        });
+    }
+    function onLeave() {
+        cover.style.transition = 'transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        cover.style.transform = '';
+        setTimeout(() => {
+            cover.style.animation = 'coverFloat 7s ease-in-out infinite';
+        }, 800);
+    }
+    cover.addEventListener('mouseenter', onEnter);
+    cover.addEventListener('mousemove', onMove);
+    cover.addEventListener('mouseleave', onLeave);
+})();
 
 // Keyboard navigation
 document.addEventListener('keydown', e => {
